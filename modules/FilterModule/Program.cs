@@ -32,7 +32,7 @@ namespace FilterModule
 
     public class Program
     {
-        private const string heartbeat = "heartbeat";
+        private const string healthCheck = "healthcheck";
         private static int counter;
         private static ModuleClient ioTHubModuleClient;
         private static int temperatureThreshold = 25;
@@ -82,8 +82,8 @@ namespace FilterModule
             // Register a callback for messages that are received by the module.
             await ioTHubModuleClient.SetInputMessageHandlerAsync("input1", FilterMessagesAsync, ioTHubModuleClient).ConfigureAwait(false);
             
-            await ioTHubModuleClient.SetMethodHandlerAsync(heartbeat, HeartbeatAsync, null).ConfigureAwait(false);
-            Console.WriteLine("Set Heartbeat Method Handler:HeartbeatAsync.");
+            await ioTHubModuleClient.SetMethodHandlerAsync(healthCheck, HealthCheckAsync, ioTHubModuleClient).ConfigureAwait(false);
+            Console.WriteLine("Set Healthcheck Method Handler:HealthCheckAsync.");
         }
 
         static Task OnDesiredPropertiesUpdate(TwinCollection desiredProperties, object userContext)
@@ -183,18 +183,35 @@ namespace FilterModule
             return null;
         }
 
-        private static async Task<MethodResponse> HeartbeatAsync(MethodRequest methodRequest, object userContext)
+        private static async Task<MethodResponse> HealthCheckAsync(MethodRequest methodRequest, object userContext)
         {
             Console.WriteLine($"Received method [{methodRequest.Name}]");
+            var request = JsonConvert.DeserializeObject<HealthCheckRequestPayload>(methodRequest.DataAsJson);
 
             var messageBody = Encoding.UTF8.GetBytes($"Device [{Environment.GetEnvironmentVariable("IOTEDGE_DEVICEID")}], Module [FilterModule] Running");
 
-            var heartbeatMessage = new Message(messageBody);
-            heartbeatMessage.Properties.Add("MessageType", heartbeat);
-            await ioTHubModuleClient.SendEventAsync(heartbeat, heartbeatMessage).ConfigureAwait(false);
-            Console.WriteLine($"Sent method response via event [{heartbeat}]");
+            var healthCheckMessage = new Message(messageBody);
+            healthCheckMessage.Properties.Add("MessageType", healthCheck);
+            if (!string.IsNullOrEmpty(request.CorrelationId))
+                healthCheckMessage.Properties.Add("correlationId", request.CorrelationId);
 
-            return new MethodResponse(200);
+            await ioTHubModuleClient.SendEventAsync(healthCheck, healthCheckMessage).ConfigureAwait(false);
+            Console.WriteLine($"Sent method response via event [{healthCheck}]");
+
+            var responseMsg = JsonConvert.SerializeObject(new HealthCheckResponsePayload() { ModuleResponse = string.IsNullOrEmpty(request.CorrelationId)? "":$"Invoked with correlationId:{request.CorrelationId}" });
+            return new MethodResponse(Encoding.UTF8.GetBytes(responseMsg), 200);
         }
     }
+
+      class HealthCheckRequestPayload
+    {
+        public string CorrelationId { get; set; }
+        public string Text { get; set; }
+    }
+
+    class HealthCheckResponsePayload
+    {
+        public string ModuleResponse { get; set; } = null;
+    }
+
 }
