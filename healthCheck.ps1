@@ -8,7 +8,9 @@ param(
   [Parameter(Mandatory=$True,Position=4)]
   [string]$methodName,
   [Parameter(Mandatory=$True,Position=5)]
-  [string]$iotHubCS
+  [string]$iotHubCS,
+  [Parameter(Mandatory=$true,Position=6)]
+  [int]$maxTestWaitTimeInSeconds
 )
 
 $installed_apps = Get-CimInstance win32_product | Select-Object Name
@@ -35,8 +37,6 @@ if ($az_iot_ext_install_status.Length -eq 0)
         az extension add --name azure-cli-iot-ext
     }
 
-# Sender wait duration
-$senderWaitValue = 2000
 
 # Listener wait duration
 $listenerWaitValue = 2000
@@ -50,7 +50,7 @@ $startInfo.FileName = "cmd.exe"
 $epochseconds = Get-Date (Get-Date).ToUniversalTime() -UFormat %s
 $invokeTimeInEpochMilliSeconds= [double][math]::Round([double]$epochseconds*1000)
 
-$startInfo.Arguments = "/c az iot hub monitor-events --props app -y -n "+$iotHubName+" -d "+ $deviceId+" -l "+$iotHubCS + " -e "+$invokeTimeInEpochMilliSeconds
+$startInfo.Arguments = "/c az iot hub monitor-events --props app -y -n "+$iotHubName+" -d "+ $deviceId+" -l "+$iotHubCS + " -e "+$invokeTimeInEpochMilliSeconds+" -t "+$maxTestWaitTimeInSeconds
 $startInfo.RedirectStandardOutput = $true
 
 $startInfo.RedirectStandardError = $true
@@ -75,6 +75,8 @@ $methodpayload = "{\" +"`"correlationId\`":\`""+$correlationid+"\`"}"
 $senderStartInfo.Arguments = "/c az iot hub invoke-module-method  -n "+$iotHubName+" -d "+$deviceId+" -m "+$moduleId+" --mn "+$methodName+" -l "+$iotHubCS +" --mp "+ $methodpayload
 
 $senderStartInfo.RedirectStandardOutput = $true
+$senderStartInfo.RedirectStandardError = $true
+
 $senderStartInfo.UseShellExecute = $false
 $senderStartInfo.CreateNoWindow = $true
 
@@ -83,12 +85,10 @@ $senderProcess = New-Object System.Diagnostics.Process
 $senderProcess.StartInfo = $senderStartInfo
 
 Write-Host "Test commnunication from IOT Hub:$iotHubName to module: $moduleId on device:$deviceId by invoke module direct method:$methodName ..."
-
 $senderProcess.Start() | Out-Null
+
+$senderProcess.WaitForExit()
 $senderOutput = $senderProcess.StandardOutput.ReadToEnd()
-$senderProcess.WaitForExit($senderWaitValue)
-
-
  if($senderOutput.Contains("200") -and $senderOutput.Contains($correlationid)) 
  {
     Write-Host "Module direct Method Invoked - Hub to Device connection validated" -ForegroundColor Green
@@ -96,7 +96,8 @@ $senderProcess.WaitForExit($senderWaitValue)
  }
  else
  {
-    Write-Host "Module direct Method Invoked - Hub to Device connection validation failed:"+$senderOutput -ForegroundColor Red
+    $sendererror= $senderProcess.StandardError.ReadToEnd()
+    Write-Host "Module direct Method Invoked - Hub to Device connection validation failed:"$sendererror -ForegroundColor Red
     exit 1
 
  }
@@ -104,9 +105,9 @@ $senderProcess.WaitForExit($senderWaitValue)
 $senderProcess.close()
 $senderProcess.Dispose()
 
+$process.WaitForExit($listenerWaitValue) 
 $listenerOutput = $process.StandardOutput.ReadToEnd()
 
-$process.WaitForExit($listenerWaitValue)
 
 Write-Host ("Test commnunication from module:$moduleId running on device:$deviceId to IOT Hub:$iotHubName by checking recieved iothub messages ...")
 
@@ -117,7 +118,9 @@ if($listenerOutput.Contains($deviceId) -and $listenerOutput.Contains($moduleId) 
  }
  else
  {
-    Write-Host "Device to Hub connection validationon failed:"+$listenerOutput -ForegroundColor Red
+   $listenererror= $process.StandardError.ReadToEnd()
+    Write-Host "Device to Hub connection validationon failed:"$listenerOutput -ForegroundColor Red
+    Write-Host $listenererror -ForegroundColor Red
     exit 1
 
  }
