@@ -65,7 +65,12 @@
             "settings": {
               "image": "mcr.microsoft.com/azureiotedge-simulated-temperature-sensor:1.0",
               "createOptions": {}
-            }
+            },
+            "env": {
+              "MessageDelay": {
+                  "value": "00:00:05"
+              }
+            } 
           },
           "FilterModule": {
             "version": "1.0",
@@ -76,7 +81,34 @@
               "image": "${MODULES.FilterModule}",
               "createOptions": {}
             }
-          }
+          },
+          "IoTEdgeMetricsCollector": {
+            "settings": {
+                "image": "mcr.microsoft.com/azureiotedge-metrics-collector:1.0",
+                "createOptions": ""
+            },
+            "type": "docker",
+            "env": {
+                "ResourceId": {
+                    "value": "${IOTHUB_ARM_RESOURCEID}"
+                },
+                "UploadTarget": {
+                    "value": "AzureMonitor"
+                },
+                "LogAnalyticsWorkspaceId": {
+                    "value": "${LOG_ANALYTICS_WSID}"
+                },
+                "LogAnalyticsSharedKey": {
+                    "value": "${LOG_ANALYTICS_SHARED_KEY}"
+                },
+                "OtherConfig": {
+                    "value": "<See https://aka.ms/edgemon-config for details>"
+                }
+            },
+            "status": "running",
+            "restartPolicy": "always",
+            "version": "1.0"
+        }          
         }
       }
     },
