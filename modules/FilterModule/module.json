@@ -4,7 +4,7 @@
     "image": {
         "repository": "${ACR_ADDRESS}/filtermodule",
         "tag": {
-            "version": "0.0.${BUILD_BUILDID}",
+            "version": "0.0.${MODULE_BUILD_VERSION}",
             "platforms": {
                 "amd64": "./Dockerfile.amd64", 
                 "amd64.debug": "./Dockerfile.amd64.debug",

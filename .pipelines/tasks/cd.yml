@@ -1,0 +1,50 @@
+parameters:
+- name: ENVIRONMENT_NAME
+  displayName: Name of target environment
+  type: string
+
+steps:
+- download: IoTStarterCI
+
+- template: ./get-acr-creds.yml
+  parameters:
+    armServiceConnection: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
+    acrName: $(ACR_NAME)
+
+- task: AzureIoTEdge@2
+  displayName: 'Azure IoT Edge - Generate deployment manifest'
+  inputs:
+    action: 'Generate deployment manifest'
+    templateFilePath: '$(PIPELINE.WORKSPACE)/IoTStarterCI/drop/deployment.template.json'
+    deploymentManifestOutputPath: '$(PIPELINE.WORKSPACE)/IoTStarterCI/drop/configs/deployment.json'
+
+- task: AzureIoTEdge@2
+  displayName: 'Azure IoT Edge - Deploy to IoT Edge devices'
+  inputs:
+    action: 'Deploy to IoT Edge devices'
+    deploymentFilePath: '$(PIPELINE.WORKSPACE)/IoTStarterCI/drop/configs/deployment.json'
+    azureSubscription: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
+    iothubname: $(IOTHUB_NAME)
+    deploymentid: '$(System.TeamProject)-${{ parameters.ENVIRONMENT_NAME }}-$(Build.BuildId)'
+    deviceOption: 'Multiple Devices'
+    targetcondition: 'tags.environment=''${{ parameters.ENVIRONMENT_NAME }}'''
+
+- task: AzureCLI@2
+  displayName: 'Smoke Test'
+  inputs:
+    azureSubscription: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
+    scriptType: bash
+    scriptPath: '$(PIPELINE.WORKSPACE)/IoTStarterCI/drop/edgeSmokeTest.sh'
+    arguments: '$(IOTHUB_NAME) ${{ parameters.ENVIRONMENT_NAME }} $(System.TeamProject)-${{ parameters.ENVIRONMENT_NAME }}-$(Build.BuildId)'
+
+- task: AzureCLI@1
+  displayName: 'Rollback deployment'
+  condition: failed()
+  inputs:
+    azureSubscription: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: >
+      az extension add --name azure-iot ||
+      az extension update --name azure-iot ||
+      az iot edge deployment delete --deployment-id $(System.TeamProject)-${{ parameters.ENVIRONMENT_NAME }}-$(Build.BuildId) --hub-name $(IOTHUB_NAME)

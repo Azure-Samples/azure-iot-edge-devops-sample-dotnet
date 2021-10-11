@@ -1,0 +1,58 @@
+trigger:
+- master
+
+pool:
+  vmImage: ubuntu-18.04
+
+variables:
+  - group: ci-cd-common
+  - name: MODULE_BUILD_VERSION
+    value: "$(Build.BuildId)"
+
+steps:
+- task: PythonScript@0
+  displayName: 'Install IoTEdgeHubDev Tool'
+  inputs:
+    scriptSource: inline
+    script: 'pip install iotedgehubdev'
+  enabled: false
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet test'
+  inputs:
+    command: test
+    projects: 'tests/FilterModuleUnitTest/*.csproj'
+
+- template: tasks/get-acr-creds.yml
+  parameters:
+    armServiceConnection: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
+    acrName: $(ACR_NAME)
+
+- task: AzureIoTEdge@2
+  displayName: 'Azure IoT Edge - Build module images'
+
+- task: AzureIoTEdge@2
+  displayName: 'Azure IoT Edge - Push module images'
+  inputs:
+    action: 'Push module images'
+    azureSubscriptionEndpoint: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
+    azureContainerRegistry: '{"loginServer":"$(ACR_NAME).azurecr.io"}'
+    fillRegistryCredential: false
+
+- task: CopyFiles@2
+  displayName: 'Copy Files to: Drop folder'
+  inputs:
+    Contents: |
+     deployment.template.json
+     **/module.json
+     edgeSmokeTest.sh
+     moduleAcrPromotion.sh
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/drop'
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish artifacts'
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)/drop'
+    artifactType: 'pipeline'
+    artifactName: 'drop'
+    parallel: true

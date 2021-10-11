@@ -85,7 +85,7 @@
           "IoTEdgeMetricsCollector": {
             "settings": {
                 "image": "mcr.microsoft.com/azureiotedge-metrics-collector:1.0",
-                "createOptions": ""
+                "createOptions": {}
             },
             "type": "docker",
             "env": {
