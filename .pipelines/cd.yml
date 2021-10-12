@@ -1,6 +1,7 @@
 pool:
   vmImage: ubuntu-18.04
 
+trigger: none
 resources:
   pipelines:
   - pipeline: IoTStarterCI
