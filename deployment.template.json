@@ -1,3 +1,4 @@
+
 {
   "$schema-template": "2.0.0",
   "modulesContent": {
@@ -108,7 +109,22 @@
             "status": "running",
             "restartPolicy": "always",
             "version": "1.0"
-        }          
+        },
+        "prometheus": {
+          "settings": {
+              "image": "kaizentm/iot-prometheus",              
+              "createOptions": ""
+          },
+          "type": "docker",
+          "env": {
+            "SERVER_URL": {
+                "value": "${PROMETHEUS_SERVER_URL}"
+            }
+          },          
+          "status": "running",
+          "restartPolicy": "always",
+          "version": "1.0"
+        }
         }
       }
     },
