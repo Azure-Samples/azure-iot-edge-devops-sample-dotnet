@@ -2,32 +2,35 @@ parameters:
 - name: ENVIRONMENT_NAME
   displayName: Name of target environment
   type: string
+- name: DEVICE_NAME
+  type: string
+  default: ${{ join('edgeDevice',upper(parameters.ENVIRONMENT_NAME)) }}
 
-variables:
-  deviceName: ${{ join('edgeDevice',upper(parameters.ENVIRONMENT_NAME)) }}
+# variables:
+#   deviceName: ${{ join('edgeDevice',upper(parameters.ENVIRONMENT_NAME)) }}
 
 steps:
 - task: AzureCLI@2
-  displayName: 'Azure CLI: Create IoT Edge device for $(ENVIRONMENT_NAME) environment'
+  displayName: 'Azure CLI: Create IoT Edge device for $(parameters.ENVIRONMENT_NAME) environment'
   inputs:
     azureSubscription: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
     scriptType: bash
     scriptLocation: inlineScript
     inlineScript: >
       az extension add --name azure-iot -y
-      && az iot hub device-identity create --hub-name $IOTHUB_NAME --device-id $(deviceName) --edge-enabled --output none
+      && az iot hub device-identity create --hub-name $IOTHUB_NAME --device-id $(parameters.DEVICE_NAME) --edge-enabled --output none
       && echo "Created Edge device"
       && sleep 5
-      && az iot hub device-twin update --device-id $(deviceName) --hub-name $IOTHUB_NAME --set tags=''{"environment":"$(ENVIRONMENT_NAME)"}'' && echo "Set tag for device" && CS_OUTPUT="$(az iot hub device-identity connection-string show --device-id $(deviceName) --hub-name $IOTHUB_NAME -o tsv)"
+      && az iot hub device-twin update --device-id $(parameters.DEVICE_NAME) --hub-name $IOTHUB_NAME --set tags=''{"environment":"$(parameters.ENVIRONMENT_NAME)"}'' && echo "Set tag for device" && CS_OUTPUT="$(az iot hub device-identity connection-string show --device-id $(parameters.DEVICE_NAME) --hub-name $IOTHUB_NAME -o tsv)"
       && echo "Got device connection string"
       && echo "##vso[task.setvariable variable=CS_OUTPUT]${CS_OUTPUT}"
 
 - task: AzureResourceGroupDeployment@2
-  displayName: 'Azure Deployment: Create VM for $(ENVIRONMENT_NAME) environment'
+  displayName: 'Azure Deployment: Create VM for $(parameters.ENVIRONMENT_NAME) environment'
   inputs:
     azureSubscription: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
     resourceGroupName: '$(RG_NAME)'
     location: '$(AZURE_LOCATION)'
     templateLocation: 'URL of the file'
     csmFileLink: 'https://raw.githubusercontent.com/Azure/iotedge-vm-deploy/1.2.0/edgeDeploy.json'
-    overrideParameters: '-deviceConnectionString $(CS_OUTPUT) -dnsLabelPrefix "iotstarter-$(ENVIRONMENT_NAME)" -adminUsername "devops" -authenticationType password -adminPasswordOrKey "$(VM_PASSWORD)" -vmSize "Standard_DS1_v2"'
+    overrideParameters: '-deviceConnectionString $(CS_OUTPUT) -dnsLabelPrefix "iotstarter-$(parameters.ENVIRONMENT_NAME)" -adminUsername "devops" -authenticationType password -adminPasswordOrKey "$(VM_PASSWORD)" -vmSize "Standard_DS1_v2"'
