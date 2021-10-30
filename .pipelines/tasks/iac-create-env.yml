@@ -7,7 +7,8 @@ jobs:
 - job: create_env_${{ parameters.ENVIRONMENT_NAME }}
   dependsOn: IaC
   variables:
-    deviceName: ${{ join('edgeDevice',upper(parameters.ENVIRONMENT_NAME)) }}
+    # deviceName: ${{ join('edgeDevice',upper(parameters.ENVIRONMENT_NAME)) }}
+    deviceName: edgeDevice${{ parameters.ENVIRONMENT_NAME }}
 
   steps:
   - task: AzureCLI@2
