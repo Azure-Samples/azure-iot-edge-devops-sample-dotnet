@@ -22,7 +22,7 @@ jobs:
         && az iot hub device-identity create --hub-name $IOTHUB_NAME --device-id $(deviceName) --edge-enabled --output none
         && echo "Created Edge device"
         && sleep 5
-        && az iot hub device-twin update --device-id $(deviceName) --hub-name $IOTHUB_NAME --set tags=''{/"environment/":/"${{ parameters.ENVIRONMENT_NAME }}/"}'' && echo "Set tag for device" && CS_OUTPUT="$(az iot hub device-identity connection-string show --device-id $(deviceName) --hub-name $IOTHUB_NAME -o tsv)"
+        && az iot hub device-twin update --device-id $(deviceName) --hub-name $IOTHUB_NAME --set tags=''{\"environment\":\"${{ parameters.ENVIRONMENT_NAME }}\"}'' && echo "Set tag for device" && CS_OUTPUT="$(az iot hub device-identity connection-string show --device-id $(deviceName) --hub-name $IOTHUB_NAME -o tsv)"
         && echo "Got device connection string"
         && echo "##vso[task.setvariable variable=CS_OUTPUT]${CS_OUTPUT}"
 
