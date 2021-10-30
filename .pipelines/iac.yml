@@ -32,12 +32,12 @@ steps:
     csmFileLink: 'https://raw.githubusercontent.com/Azure-Samples/devops-iot-scripts/12d60bd513ead7c94aa1669e505083beaef8a480/arm-iothub.json'
     overrideParameters: '-iotHubName $(IOTHUB_NAME) -iotHubSku "S1"'
 
-- template: .pipelines/tasks/iac-create-env.yml
+- template: tasks/iac-create-env.yml
   parameters:
     ENVIRONMENT_NAME: dev
-- template: .pipelines/tasks/iac-create-env.yml
+- template: tasks/iac-create-env.yml
   parameters:
     ENVIRONMENT_NAME: qa
-- template: .pipelines/tasks/iac-create-env.yml
+- template: tasks/iac-create-env.yml
   parameters:
     ENVIRONMENT_NAME: prod
