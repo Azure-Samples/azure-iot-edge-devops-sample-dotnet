@@ -1,6 +1,7 @@
 trigger: none
 variables:
   - group: ci-cd-common
+  - group: monitoring-iac
 
 jobs:
 - job: IaC
