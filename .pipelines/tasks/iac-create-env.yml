@@ -4,7 +4,7 @@ parameters:
   type: string
 
 jobs:
-- job: create-env-${{ parameters.DEVICE_NAME }}
+- job: create-env-${{ parameters.ENVIRONMENT_NAME }}
   variables:
     deviceName: ${{ join('edgeDevice',upper(parameters.ENVIRONMENT_NAME)) }}
 
