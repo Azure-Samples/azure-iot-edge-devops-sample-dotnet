@@ -5,6 +5,7 @@ parameters:
 
 jobs:
 - job: create_env_${{ parameters.ENVIRONMENT_NAME }}
+  dependsOn: IaC
   variables:
     deviceName: ${{ join('edgeDevice',upper(parameters.ENVIRONMENT_NAME)) }}
 
