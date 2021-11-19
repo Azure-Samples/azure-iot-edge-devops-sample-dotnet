@@ -10,13 +10,6 @@ variables:
     value: "$(Build.BuildId)"
 
 steps:
-- task: PythonScript@0
-  displayName: 'Install IoTEdgeHubDev Tool'
-  inputs:
-    scriptSource: inline
-    script: 'pip install iotedgehubdev'
-  enabled: false
-
 - task: DotNetCoreCLI@2
   displayName: 'dotnet test'
   inputs:
@@ -29,7 +22,16 @@ steps:
     acrName: $(ACR_NAME)
 
 - task: AzureIoTEdge@2
+  name: BuildModuleImages
   displayName: 'Azure IoT Edge - Build module images'
+
+- task: UsePythonVersion@0
+
+- script: ./edgeLocalTest.sh
+  displayName: 'Test device locally'
+  env: 
+      DEVICE_CONNECTION_STRING: $(DEV_DEVICE_CONNECTION_STRING)
+      DEPLOYMENT_FILE_PATH: $(BuildModuleImages.DEPLOYMENT_FILE_PATH)
 
 - task: AzureIoTEdge@2
   displayName: 'Azure IoT Edge - Push module images'
