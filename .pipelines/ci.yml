@@ -4,6 +4,7 @@ trigger:
 pool:
   vmImage: ubuntu-18.04
 
+
 variables:
   - group: ci-cd-common
   - name: MODULE_BUILD_VERSION
