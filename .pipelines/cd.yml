@@ -5,7 +5,7 @@ trigger: none
 resources:
   pipelines:
   - pipeline: IoTStarterCI
-    project: IoTStarter
+    project: $(System.TeamProject)
     source: 'IoTStarter CI YAML'
     branch: master
 
@@ -13,6 +13,7 @@ variables:
   - group: ci-cd-common
   - name: MODULE_BUILD_VERSION
     value: $(resources.pipeline.IoTStarterCI.runID)
+
 
 stages:
 - stage: Dev
@@ -40,14 +41,14 @@ stages:
     - template: tasks/get-acr-creds.yml
       parameters:
         armServiceConnection: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
-        acrName: $(ACR_NAME)
+        acrName: $(ACR_NAME_PROD)
     - task: AzureCLI@1
       displayName: Promote test image to prod
       inputs:
         azureSubscription: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
         scriptLocation: scriptPath
         scriptPath: moduleAcrPromotion.sh
-        arguments: $(ACR_ADDRESS) IoTStarteracr filtermodule:0.0.$(MODULE_BUILD_VERSION)-amd64
+        arguments: $(ACR_ADDRESS) $(ACR_NAME_PROD) filtermodule:0.0.$(MODULE_BUILD_VERSION)-amd64
 - stage: Prod
   displayName: 'Prod'
   jobs:

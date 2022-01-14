@@ -1,6 +1,7 @@
 Create ci-cd-common variable group with the following variables:
 
 - ACR_NAME <container registry name. e.g. iotstarteracr>
+- ACR_NAME_PROD <prod container registry name. e.g. iotstarteracrprod>v
 - ACR_USER <container registry user namer>
 - ACR_PASSWORD <container registry password>
 - AZURE_RESOURCE_MANAGER_CONNECTION_NAME <Name of Azure DevOps ARM Service connection>
