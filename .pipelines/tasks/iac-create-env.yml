@@ -34,4 +34,4 @@ jobs:
       location: '$(AZURE_LOCATION)'
       templateLocation: 'URL of the file'
       csmFileLink: 'https://raw.githubusercontent.com/Azure/iotedge-vm-deploy/1.2.0/edgeDeploy.json'
-      overrideParameters: '-deviceConnectionString $(CS_OUTPUT) -dnsLabelPrefix "iotstarter-${{ parameters.ENVIRONMENT_NAME }}" -adminUsername "devops" -authenticationType password -adminPasswordOrKey "$(VM_PASSWORD)" -vmSize "Standard_DS1_v2"'
+      overrideParameters: '-deviceConnectionString $(CS_OUTPUT) -dnsLabelPrefix "${{IOTHUB_NAME}}-${{ parameters.ENVIRONMENT_NAME }}" -adminUsername "devops" -authenticationType password -adminPasswordOrKey "$(VM_PASSWORD)" -vmSize "Standard_DS1_v2"'
