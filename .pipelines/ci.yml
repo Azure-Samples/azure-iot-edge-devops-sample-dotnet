@@ -9,6 +9,8 @@ variables:
   - group: ci-cd-common
   - name: MODULE_BUILD_VERSION
     value: "$(Build.BuildId)"
+  - name: System.Debug
+    value: true
 
 steps:
 - task: DotNetCoreCLI@2
