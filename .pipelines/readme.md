@@ -8,7 +8,7 @@ Create ci-cd-common variable group with the following variables:
 - DEV_DEVICE_CONNECTION_STRING <Dev Environment device connection string>
 - IOTHUB_NAME <Name of IoT Hub instance>
 - RG_NAME <Resource Group name>
-- VM_PASSWORD <Public SSH Key for the device VM>
+- VM_SSH_KEY <Public SSH Key for the device VM>
 - AZURE_LOCATION <Azure Locations. E.g. "West US 2">
 
 
