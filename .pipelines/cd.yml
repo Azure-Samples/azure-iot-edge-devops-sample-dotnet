@@ -1,0 +1,58 @@
+pool:
+  vmImage: ubuntu-18.04
+
+trigger: none
+resources:
+  pipelines:
+  - pipeline: IoTStarterCI
+    source: 'IoTStarter CI YAML'
+
+variables:
+  - group: ci-cd-common
+  - name: MODULE_BUILD_VERSION
+    value: $(resources.pipeline.IoTStarterCI.runID)
+
+
+stages:
+- stage: Dev
+  displayName: 'Dev'
+  jobs:
+  - job:
+    displayName: 'Deploy to Dev'
+    steps:
+    - template: tasks/cd.yml
+      parameters:
+        ENVIRONMENT_NAME: dev
+- stage: QA
+  displayName: 'QA'
+  jobs:
+  - job: Deploy
+    displayName: 'Deploy to QA'
+    steps:
+    - template: tasks/cd.yml
+      parameters:
+        ENVIRONMENT_NAME: qa
+  - job:
+    displayName: 'Promote module images to prod'
+    dependsOn: Deploy
+    steps:
+    - template: tasks/get-acr-creds.yml
+      parameters:
+        armServiceConnection: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
+        acrName: $(ACR_NAME)
+    - task: AzureCLI@1
+      displayName: Promote test image to prod
+      inputs:
+        azureSubscription: $(AZURE_RESOURCE_MANAGER_CONNECTION_NAME)
+        scriptLocation: scriptPath
+        scriptPath: moduleAcrPromotion.sh
+        arguments: $(ACR_ADDRESS) $(ACR_NAME_PROD) filtermodule:0.0.$(MODULE_BUILD_VERSION)-amd64
+- stage: Prod
+  displayName: 'Prod'
+  jobs:
+  - job:
+    displayName: 'Deploy to Prod'
+    steps:
+    - template: tasks/cd.yml
+      parameters:
+        ENVIRONMENT_NAME: prod

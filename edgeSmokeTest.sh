@@ -57,12 +57,12 @@ usage(){
 
 startTest(){
 
-az_iot_ext_install_status=$(az extension show --name azure-cli-iot-ext)
+az_iot_ext_install_status=$(az extension show --name azure-iot)
 az_iot_ext_install_status_len=${#az_iot_ext_install_status}
 
 if [ $az_iot_ext_install_status_len -eq 0 ]
 then
-    az extension add --name azure-cli-iot-ext
+    az extension add --name azure-iot
 fi
 
 if [[ $singleDeviceTest != "false" ]]
@@ -138,7 +138,7 @@ validateDevicesModulesRunning(){
 echo "Validating devices where $device_tag = $device_tag_value configured modules are running..."
 for device in ${devices[*]}
 do
-  edgeAgentTwin=$(az iot hub module-twin show --module-id '$edgeAgent' --hub-name $iothub_name --device-id $device)
+  edgeAgentTwin=$(az iot hub module-twin show --module-id '$edgeAgent' --hub-name $iothub_name --device-id $device -o json)
   deviceModules=($(echo $edgeAgentTwin | jq -r .properties.desired.modules | jq -r to_entries[].key))
   echo "Number of modules configured for $device: ${#deviceModules[*]}"
 
